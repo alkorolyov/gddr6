@@ -1,6 +1,6 @@
-# build_install.sh
-
 #!/bin/sh
+
+# build_install.sh
 
 echo "Creating build directory..."
 mkdir -p build && cd build

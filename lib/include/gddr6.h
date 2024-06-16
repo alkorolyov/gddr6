@@ -10,6 +10,7 @@ struct device
     uint8_t bus, dev, func;
     uint32_t offset;
     uint16_t dev_id;
+    uint32_t mem_temp;
     const char *vram;
     const char *arch;
     const char *name;
@@ -27,6 +28,7 @@ struct gddr6_ctx {
 void gddr6_init(void);
 void gddr6_memory_map(void);
 void gddr6_cleanup(int signal);
+void gddr6_read_temperatures(void);
 void gddr6_monitor_temperatures(void);
 int gddr6_detect_compatible_gpus(void);
 

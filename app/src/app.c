@@ -11,6 +11,15 @@ void register_signal_handlers(void)
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
 
+//    if (sigaction(SIGINT, &sa, NULL) == -1)
+//        perror("Cannot handle SIGINT");
+//
+//    if (sigaction(SIGHUP, &sa, NULL) == -1)
+//        perror("Cannot handle SIGHUP");
+//
+//    if (sigaction(SIGTERM, &sa, NULL) == -1)
+//        perror("Cannot handle SIGTERM");
+
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGHUP, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
