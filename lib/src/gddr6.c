@@ -17,10 +17,11 @@
 #define PRINT_ERROR()                                          \
       do {                                                     \
       fprintf(stderr, "Error at line %d, file %s (%d) [%s]\n", \
-      __LINE__, __FILE__, errno, strerror(errno)); exit(1);    \
+      __LINE__, __FILE__, __LINE__, strerror(errno)); exit(1);    \
       } while(0)
 
 #define MAX_DEVICES 32
+#define UNDEFINED_TEMP 0xFFFFFFFF
 
 struct gddr6_ctx ctx = {0};
 struct device dev_table[] =
@@ -130,6 +131,7 @@ void gddr6_read_temperatures(void)
     {
         if (ctx.devices[i].mapped_addr == NULL || ctx.devices[i].mapped_addr == MAP_FAILED)
         {
+            ctx.devices[i].mem_temp = UNDEFINED_TEMP;
             continue;
         }
 
@@ -149,14 +151,15 @@ void gddr6_monitor_temperatures(void)
         for (uint32_t i = 0; i < ctx.num_devices; i++)
         {
             uint32_t temp = ctx.devices[i].mem_temp;
-            printf(" %3u°C |", temp);
+            if (temp != UNDEFINED_TEMP)
+                printf(" %3u°C |", temp);
         }
         fflush(stdout);
         sleep(1);
    }
 }
 
-void gddr6_cleanup(int signal)
+void gdd6_unmap(void)
 {
     for (uint32_t i = 0; i < ctx.num_devices; i++)
     {
@@ -166,6 +169,11 @@ void gddr6_cleanup(int signal)
             ctx.devices[i].mapped_addr = NULL;
         }
     }
+}
+
+void gddr6_cleanup(int signal)
+{
+    gdd6_unmap();
     if (ctx.fd != -1)
     {
         close(ctx.fd);
