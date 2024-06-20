@@ -4,13 +4,16 @@
 
 #include <stdint.h>
 
+#define UNDEFINED_TEMP 0xFFFFFFFF
+
 struct device
 {
     uint32_t bar0;
     uint8_t bus, dev, func;
+    uint32_t vram_temp;
+    uint32_t hotspot_temp;
     uint32_t offset;
     uint16_t dev_id;
-    uint32_t mem_temp;
     const char *vram;
     const char *arch;
     const char *name;
@@ -25,11 +28,10 @@ struct gddr6_ctx {
   int fd;
 };
 
-void gddr6_init(void);
-void gddr6_memory_map(void);
-void gddr6_cleanup(int signal);
-void gddr6_read_temperatures(void);
-void gddr6_monitor_temperatures(void);
-int gddr6_detect_compatible_gpus(void);
+void nvml_init(void);
+void nvml_cleanup(int signal);
+void nvml_read_temperatures(void);
+struct gddr6_ctx* nvml_get_context(void);
+int nvml_detect_compatible_gpus(void);
 
 #endif // GDDR6_H

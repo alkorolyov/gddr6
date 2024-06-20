@@ -14,52 +14,53 @@
 #include <signal.h>
 
 #define PG_SZ sysconf(_SC_PAGE_SIZE)
-#define PRINT_ERROR()                                          \
-      do {                                                     \
-      fprintf(stderr, "Error at line %d, file %s (%d) [%s]\n", \
+#define PRINT_ERROR()                                             \
+      do {                                                        \
+      fprintf(stderr, "Error at line %d, file %s (%d) [%s]\n",    \
       __LINE__, __FILE__, __LINE__, strerror(errno)); exit(1);    \
       } while(0)
+#define SKIP_UNMAPPED_DEVICE()         \
+if (ctx.devices[i].mapped_addr == NULL || ctx.devices[i].mapped_addr == MAP_FAILED) \
+    continue
 
 #define MAX_DEVICES 32
-#define UNDEFINED_TEMP 0xFFFFFFFF
+#define VRAM_OFFSET 0x0000E2A8
+#define HOTSPOT_OFFSET 0x0002046C
 
 struct gddr6_ctx ctx = {0};
 struct device dev_table[] =
 {
-    { .offset = 0x0000E2A8, .dev_id = 0x2684, .vram = "GDDR6X", .arch = "AD102", .name =  "RTX 4090" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2702, .vram = "GDDR6X", .arch = "AD103", .name =  "RTX 4080 Super" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2704, .vram = "GDDR6X", .arch = "AD103", .name =  "RTX 4080" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2705, .vram = "GDDR6X", .arch = "AD103", .name =  "RTX 4070 Ti Super" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2782, .vram = "GDDR6X", .arch = "AD104", .name =  "RTX 4070 Ti" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2783, .vram = "GDDR6X", .arch = "AD104", .name =  "RTX 4070 Super" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2786, .vram = "GDDR6X", .arch = "AD104", .name =  "RTX 4070" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2860, .vram = "GDDR6",  .arch = "AD106", .name =  "RTX 4070 Max-Q / Mobile" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2203, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3090 Ti" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2204, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3090" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2208, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3080 Ti" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2206, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3080" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2216, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3080 LHR" },
-//    { .offset = 0x0000EE50, .dev_id = 0x2484, .vram = "GDDR6",  .arch = "GA104", .name =  "RTX 3070" },
-//    { .offset = 0x0000EE50, .dev_id = 0x2488, .vram = "GDDR6",  .arch = "GA104", .name =  "RTX 3070 LHR" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2531, .vram = "GDDR6",  .arch = "GA106", .name =  "RTX A2000" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2571, .vram = "GDDR6",  .arch = "GA106", .name =  "RTX A2000" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2232, .vram = "GDDR6",  .arch = "GA102", .name =  "RTX A4500" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2231, .vram = "GDDR6",  .arch = "GA102", .name =  "RTX A5000" },
-    { .offset = 0x0000E2A8, .dev_id = 0x26B1, .vram = "GDDR6",  .arch = "AD102", .name =  "RTX A6000" },
-    { .offset = 0x0000E2A8, .dev_id = 0x27b8, .vram = "GDDR6",  .arch = "AD104", .name =  "L4" },
-    { .offset = 0x0000E2A8, .dev_id = 0x26b9, .vram = "GDDR6",  .arch = "AD102", .name =  "L40S" },
-    { .offset = 0x0000E2A8, .dev_id = 0x2236, .vram = "GDDR6",  .arch = "GA102", .name =  "A10" },
+    {.dev_id = 0x2684, .vram = "GDDR6X", .arch = "AD102", .name =  "RTX 4090" },
+    {.dev_id = 0x2702, .vram = "GDDR6X", .arch = "AD103", .name =  "RTX 4080 Super" },
+    {.dev_id = 0x2704, .vram = "GDDR6X", .arch = "AD103", .name =  "RTX 4080" },
+    {.dev_id = 0x2705, .vram = "GDDR6X", .arch = "AD103", .name =  "RTX 4070 Ti Super" },
+    {.dev_id = 0x2782, .vram = "GDDR6X", .arch = "AD104", .name =  "RTX 4070 Ti" },
+    {.dev_id = 0x2783, .vram = "GDDR6X", .arch = "AD104", .name =  "RTX 4070 Super" },
+    {.dev_id = 0x2786, .vram = "GDDR6X", .arch = "AD104", .name =  "RTX 4070" },
+    {.dev_id = 0x2860, .vram = "GDDR6",  .arch = "AD106", .name =  "RTX 4070 Max-Q / Mobile" },
+    {.dev_id = 0x2203, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3090 Ti" },
+    {.dev_id = 0x2204, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3090" },
+    {.dev_id = 0x2208, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3080 Ti" },
+    {.dev_id = 0x2206, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3080" },
+    {.dev_id = 0x2216, .vram = "GDDR6X", .arch = "GA102", .name =  "RTX 3080 LHR" },
+    {.dev_id = 0x2531, .vram = "GDDR6",  .arch = "GA106", .name =  "RTX A2000" },
+    {.dev_id = 0x2571, .vram = "GDDR6",  .arch = "GA106", .name =  "RTX A2000" },
+    {.dev_id = 0x2232, .vram = "GDDR6",  .arch = "GA102", .name =  "RTX A4500" },
+    {.dev_id = 0x2231, .vram = "GDDR6",  .arch = "GA102", .name =  "RTX A5000" },
+    {.dev_id = 0x26B1, .vram = "GDDR6",  .arch = "AD102", .name =  "RTX A6000" },
+    {.dev_id = 0x27b8, .vram = "GDDR6",  .arch = "AD104", .name =  "L4" },
+    {.dev_id = 0x26b9, .vram = "GDDR6",  .arch = "AD102", .name =  "L40S" },
+    {.dev_id = 0x2236, .vram = "GDDR6",  .arch = "GA102", .name =  "A10" },
 };
 
-void gddr6_init(void)
+void nvml_init(void)
 {
     ctx.fd = open("/dev/mem", O_RDONLY);
-    if (ctx.fd == -1) {
+    if (ctx.fd == -1)
         PRINT_ERROR();
-    }
 }
 
-int gddr6_detect_compatible_gpus(void)
+int nvml_detect_compatible_gpus(void)
 {
     ctx.devices = NULL;
     ctx.num_devices = 0;
@@ -104,62 +105,44 @@ int gddr6_detect_compatible_gpus(void)
     return ctx.num_devices;
 }
 
-void gddr6_memory_map(void)
+void device_memory_map(struct device* dev, uint32_t offset)
 {
-    for (uint32_t i = 0; i < ctx.num_devices; i++)
-    {
-        ctx.devices[i].phys_addr = (ctx.devices[i].bar0 + ctx.devices[i].offset);
-        ctx.devices[i].base_offset = ctx.devices[i].phys_addr & ~(PG_SZ - 1);
+    dev->phys_addr = (dev->bar0 + offset);
+    dev->base_offset = dev->phys_addr & ~(PG_SZ - 1);
 
-        ctx.devices[i].mapped_addr = mmap(0, PG_SZ, PROT_READ, MAP_SHARED, ctx.fd, ctx.devices[i].base_offset);
-        if (ctx.devices[i].mapped_addr == MAP_FAILED)
-        {
-            ctx.devices[i].mapped_addr = NULL;
-            fprintf(stderr, "Memory mapping failed for pci=%x:%x:%x\n", ctx.devices[i].bus, ctx.devices[i].dev, ctx.devices[i].func);
-            fprintf(stderr, "Did you enable iomem=relaxed? Are you r00t?\n");
-            exit(EXIT_FAILURE);
-        } else {
-            printf("Device: %s %s (%s / 0x%04x) pci=%x:%x:%x\n", ctx.devices[i].name, ctx.devices[i].vram,
-            ctx.devices[i].arch, ctx.devices[i].dev_id, ctx.devices[i].bus, ctx.devices[i].dev, ctx.devices[i].func);
-        }
+    dev->mapped_addr = mmap(0, PG_SZ, PROT_READ, MAP_SHARED, ctx.fd, dev->base_offset);
+    if (dev->mapped_addr == MAP_FAILED)
+    {
+        dev->mapped_addr = NULL;
+        fprintf(stderr, "Memory mapping failed for pci=%x:%x:%x\n", dev->bus, dev->dev, dev->func);
+//            fprintf(stderr, "Did you enable iomem=relaxed? Are you r00t?\n");
+//            exit(EXIT_FAILURE);
+    } else {
+//        printf("Device: %s %s (%s / 0x%04x) pci=%x:%x:%x\n", dev->name, dev->vram,
+//               dev->arch, dev->dev_id, dev->bus, dev->dev, dev->func);
     }
 }
 
-void gddr6_read_temperatures(void)
+uint32_t read_from_device(struct device* dev)
+{
+    void *virt_addr = (uint8_t *) dev->mapped_addr + (dev->phys_addr  - dev->base_offset);
+    uint32_t read_result = *((uint32_t *)virt_addr);
+    return read_result;
+}
+
+void nvml_map_vram(void)
 {
     for (uint32_t i = 0; i < ctx.num_devices; i++)
-    {
-        if (ctx.devices[i].mapped_addr == NULL || ctx.devices[i].mapped_addr == MAP_FAILED)
-        {
-            ctx.devices[i].mem_temp = UNDEFINED_TEMP;
-            continue;
-        }
-
-        void *virt_addr = (uint8_t *) ctx.devices[i].mapped_addr + (ctx.devices[i].phys_addr  - ctx.devices[i].base_offset);
-        uint32_t read_result = *((uint32_t *)virt_addr);
-        ctx.devices[i].mem_temp = ((read_result & 0x00000fff) / 0x20);
-    }
+        device_memory_map(&ctx.devices[i], VRAM_OFFSET);
 }
 
-void gddr6_monitor_temperatures(void)
+void nvml_map_hotspot(void)
 {
-   while (1) {
-       gddr6_read_temperatures();
-
-       printf("\rVRAM Temps: |");
-
-        for (uint32_t i = 0; i < ctx.num_devices; i++)
-        {
-            uint32_t temp = ctx.devices[i].mem_temp;
-            if (temp != UNDEFINED_TEMP)
-                printf(" %3u°C |", temp);
-        }
-        fflush(stdout);
-        sleep(1);
-   }
+    for (uint32_t i = 0; i < ctx.num_devices; i++)
+        device_memory_map(&ctx.devices[i], HOTSPOT_OFFSET);
 }
 
-void gdd6_unmap(void)
+void nvml_unmap(void)
 {
     for (uint32_t i = 0; i < ctx.num_devices; i++)
     {
@@ -171,9 +154,52 @@ void gdd6_unmap(void)
     }
 }
 
-void gddr6_cleanup(int signal)
+void nvml_read_vram_temps(void)
 {
-    gdd6_unmap();
+    nvml_map_vram();
+
+    for (uint32_t i = 0; i < ctx.num_devices; i++)
+    {
+        ctx.devices[i].vram_temp = UNDEFINED_TEMP;
+        SKIP_UNMAPPED_DEVICE();
+
+        uint32_t res = read_from_device(&ctx.devices[i]);
+        ctx.devices[i].vram_temp = ((res & 0x00000fff) / 0x20); // vram conversion
+    }
+
+    nvml_unmap();
+}
+
+void nvml_read_hotspot_temps(void)
+{
+    nvml_map_hotspot();
+
+    for (uint32_t i = 0; i < ctx.num_devices; i++)
+    {
+        ctx.devices[i].hotspot_temp = UNDEFINED_TEMP;
+        SKIP_UNMAPPED_DEVICE();
+
+        uint32_t res = read_from_device(&ctx.devices[i]);
+        ctx.devices[i].hotspot_temp = (res >> 8) & 0xff; // hotspot conversion
+    }
+
+    nvml_unmap();
+}
+
+struct gddr6_ctx* nvml_get_context(void)
+{
+    return &ctx;
+}
+
+void nvml_read_temperatures(void)
+{
+    nvml_read_vram_temps();
+    nvml_read_hotspot_temps();
+}
+
+void nvml_cleanup(int signal)
+{
+    nvml_unmap();
     if (ctx.fd != -1)
     {
         close(ctx.fd);
