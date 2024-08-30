@@ -1,5 +1,8 @@
 ## GDDR6/GDDR6X GPU Memory Temperature Reader for Linux
 
+Forked version of the original temperature reader with added hotspot temperature monitoring. Refactored code
+to include new functions.
+
 Reads GDDR6/GDDR6X VRAM memory temperatures from multiple supported NVIDIA GPUs found in a host Linux system.
 These findings are based on reverse engineering of the NVIDIA GPU Linux driver.
 
